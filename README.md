@@ -20,3 +20,7 @@ Other things tried
 
 
 Reference - https://github.com/jkomyno/react-native-user-inactivity
+
+
+https://github.com/shahmehul53/userInactivityTest/assets/53183522/f04b29b6-3098-4a03-b776-f6b9b70b0280
+
