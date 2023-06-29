@@ -1,0 +1,402 @@
+// import React, {useEffect, useRef, useState} from 'react';
+// import {Keyboard, PanResponder, View, Text, Button} from 'react-native';
+// import {defaultTimeoutHandler, useTimeout} from 'usetimeout-react-hook';
+
+// function millisToMinutesAndSeconds(millis) {
+//   var minutes = Math.floor(millis / 60000);
+//   var seconds = ((millis % 60000) / 1000).toFixed(0);
+//   var finalTime =
+//     seconds == 60
+//       ? minutes + 1 + ':00'
+//       : minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+//   console.log(finalTime);
+//   console.log(typeof finalTime);
+//   return finalTime;
+// }
+
+// const defaultTimeForInactivity = 600000;
+// const defaultStyle = {
+//   flex: 1,
+// };
+
+// const UserInactivity = ({
+//   children,
+//   isActive,
+//   onAction,
+//   skipKeyboard,
+//   style,
+//   timeForInactivity,
+//   timeoutHandler,
+//   navigation,
+// }) => {
+//   const actualStyle = style || defaultStyle;
+
+//   /**
+//    * If the user has provided a custom timeout handler, it is used directly,
+//    * otherwise it defaults to the default timeout handler (setTimeout/clearTimeout).
+//    */
+//   const actualTimeoutHandler = timeoutHandler || defaultTimeoutHandler;
+//   const timeout = timeForInactivity || defaultTimeForInactivity;
+
+//   /**
+//    * If the `isActive` prop is manually changed to `true`, call `resetTimerDueToActivity`
+//    * to reset the timer and set the current state to active until the timeout expires.
+//    * If the `isActive` is changed to `false`, nothing is done.
+//    * Note however that toggling `isActive` manually is discouraged for normal use.
+//    * It should only be used in those cases where React Native doesnt't seem to
+//    * inform the `PanResponder` instance about touch events, such as when tapping
+//    * over the keyboard.
+//    */
+//   console.log('object', defaultTimeForInactivity);
+//   const initialActive = isActive === undefined ? true : isActive;
+//   const [active, setActive] = useState(initialActive);
+//   useEffect(() => {
+//     if (isActive) {
+//       resetTimerDueToActivity();
+//       console.log('in 1st useEffect');
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [isActive]);
+
+//   const [date, setDate] = useState(Date.now());
+
+//   /**
+//    * The timeout is reset when either `date` or `timeout` change.
+//    */
+//   const cancelTimer = useTimeout(
+//     () => {
+//       setActive(false);
+//       // onAction(false);
+//     },
+//     timeout,
+//     actualTimeoutHandler,
+//     [date, timeout],
+//   );
+
+//   const isFirstRender = useRef(true);
+
+//   /**
+//    * Triggers `onAction` each time the `active` state turns true
+//    * after the initial render.
+//    */
+//   useEffect(() => {
+//     if (isFirstRender.current) {
+//       isFirstRender.current = false;
+//     } else {
+//       if (active) {
+//         console.log('in 2nd useEffect');
+//         // onAction(true);
+//       } else {
+//         console.log('in else ');
+//         //Logout API
+//         navigation.navigate('Login');
+//       }
+//     }
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [active]);
+
+//   /**
+//    * Resets the timer every time the keyboard appears or disappears,
+//    * unless skipKeyboard is true.
+//    */
+//   useEffect(() => {
+//     if (skipKeyboard) {
+//       return;
+//     }
+
+//     const hideEvent = Keyboard.addListener(
+//       'keyboardDidHide',
+//       resetTimerDueToActivity,
+//     );
+//     const showEvent = Keyboard.addListener(
+//       'keyboardDidShow',
+//       resetTimerDueToActivity,
+//     );
+
+//     // release event listeners on destruction
+//     return () => {
+//       hideEvent.remove();
+//       showEvent.remove();
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   /**
+//    * This method is called whenever a touch is detected. If no touch is
+//    * detected after `this.props.timeForInactivity` milliseconds, then
+//    * `this.state.inactive` turns to true.
+//    */
+//   function resetTimerDueToActivity() {
+//     cancelTimer();
+//     setActive(true);
+
+//     /**
+//      * Causes `useTimeout` to restart.
+//      */
+//     setDate(Date.now());
+//   }
+
+//   /**
+//    * In order not to steal any touches from the children components, this method
+//    * must return false.
+//    */
+//   function resetTimerForPanResponder(/* event: GestureResponderEvent */) {
+//     // const { identifier: touchID } = event.nativeEvent;
+//     resetTimerDueToActivity();
+//     return false;
+//   }
+
+//   /**
+//    * The PanResponder instance is initialized only once.
+//    */
+//   // eslint-disable-next-line no-unused-vars
+//   const [panResponder, _] = useState(
+//     PanResponder.create({
+//       onMoveShouldSetPanResponderCapture: resetTimerForPanResponder,
+//       onPanResponderTerminationRequest: resetTimerForPanResponder,
+//       onStartShouldSetPanResponderCapture: resetTimerForPanResponder,
+//     }),
+//   );
+//   console.log('active state--->', active);
+//   return (
+//     // A HOC is there just wrap it
+//     <View style={actualStyle} collapsable={false} {...panResponder.panHandlers}>
+//       {children}
+//       {/* <View
+//         style={actualStyle}
+//         collapsable={false}
+//         {...panResponder.panHandlers}>
+//         <View
+//           style={{
+//             flex: 1,
+
+//             justifyContent: 'center',
+
+//             alignItems: 'center',
+//           }}>
+//           <Text style={{textAlign: 'center'}}>
+//             {active ? 'ACTIVE' : 'NOT ACTIVE'}
+//           </Text>
+//           <Text style={{textAlign: 'center'}}>
+//             {!active
+//               ? millisToMinutesAndSeconds(defaultTimeForInactivity)
+//               : null}
+//           </Text>
+//           <Button
+//             title="Manually set to Active"
+//             onPress={() => {
+//               setActive(true);
+//             }}
+//           />
+//           <Button
+//             title="Move to Login screen"
+//             onPress={() => navigation.navigate('Login')}
+//           />
+//         </View>
+//       </View> */}
+//     </View>
+//   );
+// };
+
+// export default UserInactivity;
+
+import React, {useEffect, useRef, useState} from 'react';
+import {Keyboard, PanResponder, StyleProp, View, ViewStyle} from 'react-native';
+import {
+  defaultTimeoutHandler,
+  TimeoutHandler,
+  useTimeout,
+} from 'usetimeout-react-hook';
+
+const defaultTimeForInactivity = 10000;
+const defaultStyle: ViewStyle = {
+  flex: 1,
+};
+
+export interface UserInactivityProps<T = unknown> {
+  /**
+   * Number of milliseconds after which the view is considered inactive.
+   * If it changed, the timer restarts and the view is considered active until
+   * the new timer expires.
+   * It defaults to 1000.
+   */
+  timeForInactivity?: number;
+
+  /**
+   * If it's explicitly set to `true` after the component has already been initialized,
+   * the timer restarts and the view is considered active until the new timer expires.
+   * It defaults to true.
+   */
+  isActive?: boolean;
+
+  /**
+   * Generic usetimeout-react-hook's TimeoutHandler implementation.
+   * It defaults to the standard setTimeout/clearTimeout implementation.
+   * See https://github.com/jkomyno/usetimeout-react-hook/#-how-to-use.
+   */
+  timeoutHandler?: TimeoutHandler<T>;
+
+  /**
+   * Children components to embed inside UserInactivity's View.
+   * If any children component is pressed, `onAction` is called after
+   * `timeForInactivity` milliseconds.
+   */
+  children: React.ReactNode;
+
+  /**
+   * If set to true, the timer is not reset when the keyboard appears
+   * or disappears.
+   */
+  skipKeyboard?: boolean;
+
+  /**
+   * Optional custom style for UserInactivity's View.
+   * It defaults to { flex: 1 }.
+   */
+  style?: StyleProp<ViewStyle>;
+
+  /**
+   * Callback triggered anytime UserInactivity's View isn't touched for more than
+   * `timeForInactivity` seconds.
+   * It's `active` argument is true if and only if the View wasn't touched for more
+   * than `timeForInactivity` milliseconds.
+   */
+  onAction: (active: boolean) => void;
+}
+
+const UserInactivity: React.FC<UserInactivityProps> = ({
+  children,
+  isActive,
+  onAction,
+  skipKeyboard,
+  style,
+  timeForInactivity,
+  timeoutHandler,
+}) => {
+  const actualStyle = style || defaultStyle;
+
+  /**
+   * If the user has provided a custom timeout handler, it is used directly,
+   * otherwise it defaults to the default timeout handler (setTimeout/clearTimeout).
+   */
+  const actualTimeoutHandler = timeoutHandler || defaultTimeoutHandler;
+  const timeout = timeForInactivity || defaultTimeForInactivity;
+
+  /**
+   * If the `isActive` prop is manually changed to `true`, call `resetTimerDueToActivity`
+   * to reset the timer and set the current state to active until the timeout expires.
+   * If the `isActive` is changed to `false`, nothing is done.
+   * Note however that toggling `isActive` manually is discouraged for normal use.
+   * It should only be used in those cases where React Native doesnt't seem to
+   * inform the `PanResponder` instance about touch events, such as when tapping
+   * over the keyboard.
+   */
+  const initialActive = isActive === undefined ? true : isActive;
+  const [active, setActive] = useState(initialActive);
+  useEffect(() => {
+    if (isActive) {
+      resetTimerDueToActivity();
+    }
+  }, [isActive]);
+
+  const [date, setDate] = useState(Date.now());
+
+  /**
+   * The timeout is reset when either `date` or `timeout` change.
+   */
+  const cancelTimer = useTimeout(
+    () => {
+      setActive(false);
+      onAction(false);
+      // @ts-ignore
+    },
+    timeout,
+    actualTimeoutHandler,
+    [date, timeout],
+  );
+
+  const isFirstRender = useRef(true);
+
+  /**
+   * Triggers `onAction` each time the `active` state turns true
+   * after the initial render.
+   */
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+    } else {
+      if (active) {
+        onAction(true);
+      }
+    }
+  }, [active]);
+
+  /**
+   * Resets the timer every time the keyboard appears or disappears,
+   * unless skipKeyboard is true.
+   */
+  useEffect(() => {
+    if (skipKeyboard) {
+      return;
+    }
+
+    const hideEvent = Keyboard.addListener(
+      'keyboardDidHide',
+      resetTimerDueToActivity,
+    );
+    const showEvent = Keyboard.addListener(
+      'keyboardDidShow',
+      resetTimerDueToActivity,
+    );
+
+    // release event listeners on destruction
+    return () => {
+      hideEvent.remove();
+      showEvent.remove();
+    };
+  }, []);
+
+  /**
+   * This method is called whenever a touch is detected. If no touch is
+   * detected after `this.props.timeForInactivity` milliseconds, then
+   * `this.state.inactive` turns to true.
+   */
+  function resetTimerDueToActivity() {
+    cancelTimer();
+    setActive(true);
+
+    /**
+     * Causes `useTimeout` to restart.
+     */
+    setDate(Date.now());
+  }
+
+  /**
+   * In order not to steal any touches from the children components, this method
+   * must return false.
+   */
+  function resetTimerForPanResponder(/* event: GestureResponderEvent */) {
+    // const { identifier: touchID } = event.nativeEvent;
+    resetTimerDueToActivity();
+    return false;
+  }
+
+  /**
+   * The PanResponder instance is initialized only once.
+   */
+  const [panResponder, _] = useState(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: resetTimerForPanResponder,
+      onPanResponderTerminationRequest: resetTimerForPanResponder,
+      onStartShouldSetPanResponderCapture: resetTimerForPanResponder,
+    }),
+  );
+
+  return (
+    <View style={actualStyle} collapsable={false} {...panResponder.panHandlers}>
+      {children}
+    </View>
+  );
+};
+
+export default UserInactivity;
